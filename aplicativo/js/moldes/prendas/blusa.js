@@ -166,9 +166,8 @@ function delantero(m, b) {
 export function manga(m, sisaTotal, opciones = {}) {
   const o = { holgura: F.holguraBrazo, facilidad: F.facilidadManga, largo: m['largo-manga'], anchoAbajo: null,
     abertura: false, margenRuedo: F.margen.manga, ...opciones };
-  const A = m['contorno-brazo'] + o.holgura;
+  let A = m['contorno-brazo'] + o.holgura;
   const L = o.largo;
-  const entra = o.anchoAbajo ? (A - o.anchoAbajo) / 2 : 1;
   const objetivo = (sisaTotal + o.facilidad) / 2;
   const media = (h) => ({ a: P(0, h), c: P(A * 0.2, h), c2: P(A * 0.3, 0), b: P(A / 2, 0) });
   let bajo = 2, alto = Math.max(3, L - 2);
@@ -176,10 +175,40 @@ export function manga(m, sisaTotal, opciones = {}) {
     const h = (bajo + alto) / 2;
     if (largoTramo(media(h)) < objetivo) bajo = h; else alto = h;
   }
-  const h = (bajo + alto) / 2;
-  const izq = media(h);
-  const der = { a: P(A / 2, 0), c: P(A * 0.7, 0), c2: P(A * 0.8, h), b: P(A, h) };
-  const U1 = P(0, h), U2 = P(A, h), B1 = P(entra, L), B2 = P(A - entra, L), T = P(A / 2, 0);
+  let h = (bajo + alto) / 2;
+  let izq = media(h);
+  let der = { a: P(A / 2, 0), c: P(A * 0.7, 0), c2: P(A * 0.8, h), b: P(A, h) };
+  if (o.sisas) {
+    // Ajuste camisero: bajar la copa y ampliar bíceps manteniendo cada costura.
+    // Kenneth D. King, Threads, "A Fresh Way to Fit a Sleeve", opción 2:
+    // https://www.threadsmagazine.com/2021/07/22/a-fresh-way-to-fit-a-sleeve-2
+    // 0,75 es nuestra reducción inicial de diseño, no una regla de la fuente.
+    h *= 0.75;
+    const minimo = A;
+    const mitad = (ancho, trasera) => ({ a: P(0, h),
+      c: P(ancho * (trasera ? 0.38 : 0.45), h),
+      c2: P(ancho * (trasera ? 0.58 : 0.65), 0), b: P(ancho, 0) });
+    const ajustar = (sisa, trasera) => {
+      const meta = sisa + o.facilidad / 2;
+      let lo = 0, hi = meta;
+      for (let i = 0; i < 45; i++) {
+        const w = (lo + hi) / 2;
+        if (largoTramo(mitad(w, trasera), 200) < meta) lo = w; else hi = w;
+      }
+      return mitad((lo + hi) / 2, trasera);
+    };
+    for (let i = 0; i < 80; i++) {
+      izq = ajustar(o.sisas.espalda, true);
+      const frontal = ajustar(o.sisas.delantero, false);
+      A = izq.b.x + frontal.b.x;
+      const espejo = (p) => P(A - p.x, p.y);
+      der = { a: izq.b, c: espejo(frontal.c2), c2: espejo(frontal.c), b: espejo(frontal.a) };
+      if (A >= minimo && h < Math.min(o.sisas.espalda, o.sisas.delantero)) break;
+      h *= 0.95;
+    }
+  }
+  const entra = o.anchoAbajo ? (A - o.anchoAbajo) / 2 : 1;
+  const U1 = P(0, h), U2 = P(A, h), B1 = P(entra, L), B2 = P(A - entra, L), T = izq.b;
   const xa = B1.x + (B2.x - B1.x) * 0.25; // abertura del puño, del lado de atrás
   // Cada par de marcas se superpone al coser: consume 2 cm, 4 cm entre ambos.
   // La abertura es un corte independiente, no una marca del pliegue.
@@ -203,16 +232,21 @@ export function manga(m, sisaTotal, opciones = {}) {
     nombre: 'Manga', cortar: 'Cortar 2', alDoblez: false,
     elementos: [
       { paso: 0, tipo: 'linea', p: [U1, U2] }, { paso: 0, tipo: 'punto', p: [U1], nombre: 'A' }, { paso: 0, tipo: 'punto', p: [U2], nombre: 'B', der: true },
-      { paso: 1, tipo: 'linea', p: [P(A / 2, h), T], puntos: true }, { paso: 1, tipo: 'punto', p: [T], nombre: 'C', der: true },
+      { paso: 1, tipo: 'linea', p: [P(T.x, h), T], puntos: true }, { paso: 1, tipo: 'punto', p: [T], nombre: 'C', der: true },
+      ...(o.sisas ? [
+        { paso: 2, tipo: 'texto', p: [P(A * 0.2, h + 3)], texto: 'ESPALDA', tam: 1 },
+        { paso: 2, tipo: 'texto', p: [P(A * 0.65, h + 3)], texto: 'DELANTERO', tam: 1 },
+        { paso: 2, tipo: 'linea', p: [T, P(T.x, T.y + 0.7)] },
+      ] : []),
       { paso: 2, tipo: 'curva', p: [izq.a, izq.c, izq.c2, izq.b] }, { paso: 2, tipo: 'curva', p: [der.a, der.c, der.c2, der.b] },
       { paso: 3, tipo: 'linea', p: [U1, B1] }, { paso: 3, tipo: 'linea', p: [U2, B2] }, { paso: 3, tipo: 'linea', p: [B1, B2] },
       ...abertura,
     ],
     pasos: [
-      `Traza una línea A–B del ancho de la manga: contorno de brazo + ${n(o.holgura)} = ${n(A)} cm.`,
-      `Desde el centro de A–B sube ${n(h)} cm (altura de copa) y marca C. La app la calculó para que la manga calce en tu sisa de ${n(sisaTotal)} cm.`,
-      'Une A con C y C con B con curvas suaves: hacia adentro cerca de A y B, y redondeada arriba (la copa).',
-      `Desde A y B baja ${n(L)} cm${o.abertura ? ' (largo de manga menos el puño)' : ' (largo de manga)'}, entrando ${n(entra)} cm a cada lado. Une abajo.`,
+      o.sisas ? `Traza A–B = ${n(A)} cm: ancho ajustado para una copa camisera más baja, con ${n(A - m['contorno-brazo'])} cm de holgura sobre el brazo.` : `Traza una línea A–B del ancho de la manga: contorno de brazo + ${n(o.holgura)} = ${n(A)} cm.`,
+      `Desde A mide ${n(T.x)} cm hacia B y sube ${n(h)} cm para marcar C (altura de copa). La sisa del cuerpo mide ${n(sisaTotal)} cm.`,
+      o.sisas ? `Traza las curvas impresas: A–C va a la espalda y C–B al delantero; C coincide con la costura del hombro. La copa lleva ${n(o.facilidad)} cm adicionales en total para embeber suavemente, sin fruncir. Corta las dos mangas en espejo y prueba una hilvanada antes de la costura definitiva.` : 'Une A con C y C con B con curvas suaves: hacia adentro cerca de A y B, y redondeada arriba (la copa).',
+      `Desde la altura de C mide hacia abajo ${n(L)} cm${o.abertura ? ' (largo de manga menos el puño)' : ' (largo de manga)'}. Desde A y B hasta esa línea quedan ${n(L - h)} cm; entra ${n(entra)} cm a cada lado y une abajo.`,
       ...(o.abertura ? ['Abertura: a un cuarto del ancho de abajo (lado de atrás) sube 12 cm; solo esta línea se corta. Los pliegues llevan dos pares de marcas punteadas, separados 2 cm dentro de cada par. Junta las marcas de cada par siguiendo la flecha y sujeta: recoges 2 cm por pliegue, 4 cm en total. El espacio entre los pares no se recoge.'] : []),
       `Agrega el margen: ${n(F.margen.sisa)} cm en la copa, ${n(F.margen.costado)} en los costados y ${n(o.margenRuedo)} en el ruedo.`,
     ],
@@ -233,7 +267,8 @@ export function cuerpo(m, cambios = {}) {
   try {
     const b = base(m);
     const del = delantero(m, b), esp = espalda(m, b);
-    return { b, delantero: del.pieza, espalda: esp.pieza, sisa: del.sisa + esp.sisa, formulas: F };
+    return { b, delantero: del.pieza, espalda: esp.pieza, sisa: del.sisa + esp.sisa,
+      sisas: { delantero: del.sisa, espalda: esp.sisa }, formulas: F };
   } finally {
     F = antes;
   }

@@ -139,6 +139,7 @@ export function construir(m) {
   const sisaTotal = largoTramo(del.sisa) + largoTramo(esp.sisa);
   const extras = cuelloYPuno(mitadEscote(del.pieza, esp.canesu), m.muneca);
   const mangaLarga = manga(m, sisaTotal, {
+    sisas: { delantero: largoTramo(del.sisa), espalda: largoTramo(esp.sisa) },
     holgura: F.holguraBrazo, facilidad: F.facilidadManga,
     largo: m['largo-manga-larga'] - extras.anchoPuno, anchoAbajo: extras.largoPuno + 4, abertura: true, margenRuedo: 1,
   });

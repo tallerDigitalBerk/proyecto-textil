@@ -19,6 +19,7 @@ export function construir(m) {
   const delantero = agregarBotones(c.delantero, A.y + 1.5, R0.y - 10);
   const extras = cuelloYPuno(mitadEscote(c.delantero, c.espalda), m.muneca);
   const mangaLarga = manga(m, c.sisa, {
+    sisas: c.sisas,
     holgura: FORMULAS.holguraBrazo, facilidad: FORMULAS.facilidadManga,
     largo: m['largo-manga-larga'] - extras.anchoPuno, anchoAbajo: extras.largoPuno + 4, abertura: true, margenRuedo: 1,
   });
