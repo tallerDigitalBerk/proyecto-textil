@@ -58,7 +58,23 @@ for (const tipo of ['dama', 'varon']) {
       }
       if (tabla === tipo && talla === 'M') console.log(`${tipo} M: copa ${antigua.alturaCopa.toFixed(2)} → ${actual.alturaCopa.toFixed(2)} cm; ancho ${antigua.ancho.toFixed(2)} → ${actual.ancho.toFixed(2)} cm`);
       casos++;
+      if (tipo === 'dama') {
+        for (const largo of [medidas['largo-camisa'], medidas['talle-espalda'] + 2, medidas['talle-espalda'] + 8]) {
+          const variante = construir({ ...medidas, 'largo-camisa': largo });
+          for (const pieza of variante.piezas.filter(p => ['Delantero', 'Espalda'].includes(p.nombre))) {
+            const pinzas = pieza.elementos.filter(e => e.tipo === 'pinza' && e.p[0].y === e.p[2].y);
+            assert.ok(pinzas.length === 0 || pinzas.length === 2, 'Las pinzas de cintura deben quedar cerradas');
+            if (pinzas.length) {
+              const ruedo = Math.max(...pieza.contorno.flatMap(t => [t.a.y, t.b.y]));
+              assert.ok(pinzas.every(e => e.p.every(p => p.y <= ruedo - 5)), 'Separación mínima al ruedo');
+              assert.deepEqual(pinzas[0].p[0], pinzas[1].p[0]);
+              assert.deepEqual(pinzas[0].p[2], pinzas[1].p[2]);
+              assert.ok(pinzas[1].p[1].y > pinzas[1].p[0].y, 'Punta inferior debajo de la cintura');
+            }
+          }
+        }
+      }
     }
   }
 }
-console.log(`OK: ${casos} combinaciones; costuras delantera y trasera, ancho de brazo, altura y costados verificados.`);
+console.log(`OK: ${casos} combinaciones de mangas y 30 variantes de largos con pinzas interiores verificadas.`);

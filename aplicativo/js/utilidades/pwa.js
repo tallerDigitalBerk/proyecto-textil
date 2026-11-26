@@ -1,5 +1,5 @@
-// App instalable y sin internet: registra el service worker, avisa de
-// versiones nuevas, muestra "Sin internet" y ofrece el botón "Instalar"
+// App instalable y sin internet: aplica versiones nuevas automáticamente,
+// muestra "Sin internet" y ofrece el botón "Instalar".
 let pedidoInstalar = null;
 let aviso = () => {};
 
@@ -55,12 +55,11 @@ export function iniciarPwa() {
   const workers = navigator.serviceWorker;
   let versionEnPantalla = workers.controller;
   let versionOfrecida = null;
-  let aceptada = false;
   let recargando = false;
   let editando = false;
   let recargaPendiente = false;
   const recargar = () => {
-    if (editando && !instalada()) { recargaPendiente = true; return; }
+    if (editando) { recargaPendiente = true; return; }
     if (recargando) return;
     recargando = true;
     location.reload();
@@ -75,22 +74,15 @@ export function iniciarPwa() {
   const ofrecerVersion = (nueva) => {
     if (!nueva || !versionEnPantalla || nueva === versionOfrecida) return;
     versionOfrecida = nueva;
-    const aplicar = () => {
-      aceptada = true;
-      if (workers.controller === nueva) recargar();
-      else nueva.postMessage('actualizar');
-    };
-    if (instalada()) mostrarBarra('Hay una versión nueva de la app.', 'Actualizar', aplicar);
-    else aplicar();
+    if (workers.controller === nueva) recargar();
+    else nueva.postMessage('actualizar');
   };
 
   workers.addEventListener('controllerchange', () => {
     const actual = workers.controller;
     if (!actual || actual === versionEnPantalla) return;
     if (!versionEnPantalla) { versionEnPantalla = actual; return; } // Primera visita.
-    // El navegador y la app instalada pueden compartir el mismo worker.
-    if (instalada() && !aceptada) ofrecerVersion(actual);
-    else recargar();
+    recargar();
   });
 
   workers.register('sw.js', { updateViaCache: 'none' }).then((registro) => {

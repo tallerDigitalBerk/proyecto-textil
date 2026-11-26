@@ -3,7 +3,7 @@
 // actualizar la app nunca borra los datos de la persona.
 
 // ⚠️ Cambiar VERSION cada vez que se publique un cambio (así el celular se actualiza)
-const VERSION = 'mi-taller-v68';
+const VERSION = 'mi-taller-v69';
 
 const ARCHIVOS = [
   './',
@@ -124,7 +124,7 @@ const ARCHIVOS = [
 // 1. Primera visita con internet: descarga y guarda todo
 self.addEventListener('install', (e) => {
   const archivos = ARCHIVOS.map((ruta) => new Request(ruta, { cache: 'reload' }));
-  e.waitUntil(caches.open(VERSION).then((cache) => cache.addAll(archivos)));
+  e.waitUntil(caches.open(VERSION).then((cache) => cache.addAll(archivos)).then(() => self.skipWaiting()));
 });
 
 // 2. Al activar una versión nueva, borra solo las versiones viejas de la app

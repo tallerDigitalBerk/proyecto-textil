@@ -53,10 +53,13 @@ function espalda(m, b) {
   const sisa = { a: C, c: P(m['ancho-espalda'] / 2 + 0.5, ys * 0.6), c2: P(m['ancho-espalda'] / 2 + 1.5, ys), b: D };
   const escote = { a: A, c: P(c6 * 0.8, F.escoteEspalda), b: B };
   const xp = m['ancho-espalda'] / 4 + 1, p2 = F.pinzaCintura / 2;
-  const rombo = yR > yW + 3;
-  const pinza = yR >= yW
+  const finPinza = F.pinzaInterna
+    ? Math.min(yW + F.pinzaInterna.largoInferior, yH - 4, yR - F.pinzaInterna.separacionRuedo)
+    : Math.min(yH - 4, yR - 3);
+  const rombo = F.pinzaInterna ? finPinza > yW + 1 : yR > yW + 3;
+  const pinza = (F.pinzaInterna ? rombo && ys + 3 < yW : yR >= yW)
     ? [{ paso: 5, tipo: 'pinza', p: [P(xp - p2, yW), P(xp, ys + 3), P(xp + p2, yW)] },
-      ...(rombo ? [{ paso: 5, tipo: 'pinza', p: [P(xp - p2, yW), P(xp, Math.min(yH - 4, yR - 3)), P(xp + p2, yW)] }] : [])]
+      ...(rombo ? [{ paso: 5, tipo: 'pinza', p: [P(xp - p2, yW), P(xp, finPinza), P(xp + p2, yW)] }] : [])]
     : [];
 
   return {
@@ -80,8 +83,8 @@ function espalda(m, b) {
         `Línea de busto: baja busto ÷ 8 + ${n(F.sisaExtra)} = ${n(ys)} cm y mide hacia la derecha busto ÷ 4 + ${n(F.holguraBusto)} = ${n(ancho)} cm: punto D. Une C con D con la curva de la sisa.`,
         `Costado: desde A baja el talle de espalda (${n(m['talle-espalda'])} cm) y mide cintura ÷ 4 + ${n(F.pinzaCintura)} = ${n(E.x)} cm (punto E). ${yR > yW ? `${n(m['altura-cadera'])} cm más abajo mide cadera ÷ 4 + ${n(F.holguraCadera)} = ${n(Fc.x)} cm. Une D, E y la cadera, y cierra el ruedo.` : 'Une D con E: aquí termina el cuerpo y se une a la falda.'}`,
         pinza.length
-          ? `Pinza de cintura: a ${n(xp)} cm del centro, ${n(F.pinzaCintura)} cm de ancho en la cintura. Sube hasta ${n(ys + 3)} cm${rombo ? ' y baja hasta la cadera (forma de rombo)' : ''}.`
-          : 'Tu blusa es corta: no lleva pinza de cintura.',
+          ? `Pinza de cintura: a ${n(xp)} cm del centro, ${n(F.pinzaCintura)} cm de ancho en la cintura. Sube hasta ${n(ys + 3)} cm${rombo ? ` y termina abajo ${n(finPinza - yW)} cm después de la cintura, a ${n(yR - finPinza)} cm del ruedo (rombo cerrado)` : ''}.`
+          : 'No hay espacio suficiente para la pinza de cintura: se omite.',
         `Agrega el margen: ${n(F.margen.escote)} cm en el escote, ${n(F.margen.hombro)} en el hombro, ${n(F.margen.sisa)} en la sisa, ${n(F.margen.costado)} en el costado, ${n(F.margen.ruedo)} en el ruedo y ${n(F.margen.centroEspalda)} en el centro (cierre).`,
       ],
       contorno: [
@@ -117,10 +120,13 @@ function delantero(m, b) {
   const pinzaCostado = hayCostado
     ? [{ paso: 6, tipo: 'pinza', p: [sobreLado(ys + 4), P(Pb.x + 3, Pb.y), sobreLado(ys + 4 + exceso)] }] : [];
   const p2 = F.pinzaCintura / 2;
-  const rombo = yR > yW + 3;
-  const pinzaCintura = yR >= yW
+  const finPinza = F.pinzaInterna
+    ? Math.min(yW + F.pinzaInterna.largoInferior, yH - 4, yR - F.pinzaInterna.separacionRuedo)
+    : Math.min(yH - 4, yR - 3);
+  const rombo = F.pinzaInterna ? finPinza > yW + 1 : yR > yW + 3;
+  const pinzaCintura = (F.pinzaInterna ? rombo && Pb.y + 2 < yW : yR >= yW)
     ? [{ paso: 6, tipo: 'pinza', p: [P(Pb.x - p2, yW), P(Pb.x, Pb.y + 2), P(Pb.x + p2, yW)] },
-      ...(rombo ? [{ paso: 6, tipo: 'pinza', p: [P(Pb.x - p2, yW), P(Pb.x, Math.min(yH - 4, yR - 3)), P(Pb.x + p2, yW)] }] : [])]
+      ...(rombo ? [{ paso: 6, tipo: 'pinza', p: [P(Pb.x - p2, yW), P(Pb.x, finPinza), P(Pb.x + p2, yW)] }] : [])]
     : [];
 
   return {
@@ -146,7 +152,7 @@ function delantero(m, b) {
         `Punto de busto P: desde B baja el alto de busto (${n(m['alto-busto'])} cm) y desde el centro mide busto a busto ÷ 2 = ${n(Pb.x)} cm.`,
         `Costado: desde B baja el talle delantero (${n(yW)} cm) y mide cintura ÷ 4 + ${n(F.pinzaCintura)} = ${n(E.x)} cm (punto E). ${yR > yW ? `${n(m['altura-cadera'])} cm más abajo, cadera ÷ 4 + ${n(F.holguraCadera)}. Une D, E y la cadera, y cierra el ruedo.` : 'Une D con E: aquí termina el cuerpo y se une a la falda.'}`,
         [hayCostado ? `Pinza de costado: ${n(exceso)} cm de ancho, 4 cm debajo de la sisa, apuntando al busto (termina 3 cm antes de P).` : '',
-          pinzaCintura.length ? `Pinza de cintura: debajo de P, ${n(F.pinzaCintura)} cm de ancho en la cintura, desde 2 cm bajo P hasta la ${rombo ? 'cadera' : 'cintura'}.` : '',
+          pinzaCintura.length ? `Pinza de cintura: debajo de P, ${n(F.pinzaCintura)} cm de ancho en la cintura, desde 2 cm bajo P hasta ${rombo ? `${n(finPinza - yW)} cm debajo de la cintura. Termina a ${n(yR - finPinza)} cm del ruedo, formando un rombo cerrado` : 'la cintura'}.` : '',
         ].join(' ').trim() || 'Con estas medidas no hacen falta pinzas.',
         `Agrega el margen: ${n(F.margen.escote)} cm en el escote, ${n(F.margen.hombro)} en el hombro, ${n(F.margen.sisa)} en la sisa, ${n(F.margen.costado)} en el costado y ${n(F.margen.ruedo)} en el ruedo. El doblez no lleva margen.`,
       ],
