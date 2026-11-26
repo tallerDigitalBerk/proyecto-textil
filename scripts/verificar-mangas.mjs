@@ -63,13 +63,13 @@ for (const tipo of ['dama', 'varon']) {
           const variante = construir({ ...medidas, 'largo-camisa': largo });
           for (const pieza of variante.piezas.filter(p => ['Delantero', 'Espalda'].includes(p.nombre))) {
             const pinzas = pieza.elementos.filter(e => e.tipo === 'pinza' && e.p[0].y === e.p[2].y);
-            assert.ok(pinzas.length === 0 || pinzas.length === 2, 'Las pinzas de cintura deben quedar cerradas');
+            assert.equal(pinzas.length, 1, 'Debe conservar la pinza incluso en camisa corta');
             if (pinzas.length) {
               const ruedo = Math.max(...pieza.contorno.flatMap(t => [t.a.y, t.b.y]));
-              assert.ok(pinzas.every(e => e.p.every(p => p.y <= ruedo - 5)), 'Separación mínima al ruedo');
-              assert.deepEqual(pinzas[0].p[0], pinzas[1].p[0]);
-              assert.deepEqual(pinzas[0].p[2], pinzas[1].p[2]);
-              assert.ok(pinzas[1].p[1].y > pinzas[1].p[0].y, 'Punta inferior debajo de la cintura');
+              assert.equal(pinzas[0].p[0].y, ruedo);
+              assert.equal(pinzas[0].p[2].y, ruedo);
+              assert.ok(pinzas[0].p[1].y < ruedo, 'Punta superior dentro de la prenda');
+              assert.equal(pinzas[0].p[2].x - pinzas[0].p[0].x, 3);
             }
           }
         }
@@ -77,4 +77,4 @@ for (const tipo of ['dama', 'varon']) {
     }
   }
 }
-console.log(`OK: ${casos} combinaciones de mangas y 30 variantes de largos con pinzas interiores verificadas.`);
+console.log(`OK: ${casos} combinaciones de mangas y 30 variantes de largos con pinzas hasta la costura inferior.`);

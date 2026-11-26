@@ -9,12 +9,12 @@ export const FORMULAS = {
   holguraCuello: 2,     // el escote se agranda un poco para el cuello camisero
   holguraBrazo: 8,
   facilidadManga: 1,
-  pinzaInterna: { separacionRuedo: 5, largoInferior: 10 },
+  pinzaHastaRuedo: true,
 };
 
 export function construir(m) {
   const medidas = { ...m, cuello: m.cuello + FORMULAS.holguraCuello, 'largo-blusa': m['largo-camisa'] };
-  const c = cuerpo(medidas, { holguraBusto: FORMULAS.holguraBusto, pinzaInterna: FORMULAS.pinzaInterna });
+  const c = cuerpo(medidas, { holguraBusto: FORMULAS.holguraBusto, pinzaHastaRuedo: FORMULAS.pinzaHastaRuedo });
   const espalda = espaldaAlDoblez(c.espalda);
   const { a: A, b: R0 } = c.delantero.lineaCentro;
   const delantero = agregarBotones(c.delantero, A.y + 1.5, R0.y - 10);
